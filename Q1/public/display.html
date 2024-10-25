@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+</head>
+
+<body>
+    <table id="usertable" border="1">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Profile</th>
+            <th>Download</th>
+        </tr>
+    </table>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8000/user/data",
+            // data: "data",
+            // dataType: "json",
+            success: function (response) {
+                var usertable = document.getElementById("usertable");
+                for (var i = 0; i < response.length; i++) {
+                    var tr = document.createElement("tr");
+
+                    var td = document.createElement("td");
+                    var textnode = document.createTextNode(response[i]._id);
+                    td.appendChild(textnode);
+                    tr.appendChild(td);
+
+                    td = document.createElement("td");
+                    textnode = document.createTextNode(response[i].name);
+                    td.appendChild(textnode);
+                    tr.appendChild(td);
+
+                    td = document.createElement("td");
+                    var img = document.createElement("img");
+                    img.src = "../uploads/" + response[i].profilepic
+                    img.width = "100";
+                    img.height = "100";
+                    // textnode = document.createTextNode(response[i].profilepic)
+                    td.appendChild(img);
+                    tr.appendChild(td)
+
+                    td = document.createElement("td")
+                    textnode = document.createTextNode("download");
+                    var a = document.createElement("a");
+                    a.href = "http://localhost:8000/user/" + response[i].profilepic
+                    a.appendChild(textnode)
+                    td.appendChild(a);
+                    tr.appendChild(td);
+
+                    usertable.appendChild(tr);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
