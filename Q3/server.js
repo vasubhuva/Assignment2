@@ -1,76 +1,64 @@
+// index.js
+
 const express = require('express');
 const session = require('express-session');
-const connectRedis = require('connect-redis');
+const RedisStore = require('connect-redis')(session);
 const redis = require('redis');
-const bodyParser = require('body-parser');
 
 const app = express();
-const port = 3000;
 
 // Create Redis client
 const redisClient = redis.createClient();
+redisClient.on('error', (err) => {
+    console.error('Redis error:', err);
+});
 
-// Middleware
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-// Session configuration
-const RedisStore = connectRedis(session);
+// Set up session middleware
 app.use(session({
     store: new RedisStore({ client: redisClient }),
-    secret: 'your-secret-key',
+    secret: 'your_secret_key', // Change this to a strong secret
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Set to true if using https
+    cookie: {
+        secure: false, // Set to true if using https
+        maxAge: 1000 * 60 * 10 // Session expires in 10 minutes
+    }
 }));
 
-// Dummy user data
-const users = {
-    user1: 'password1',
-    user2: 'password2'
+// Middleware to check if user is logged in
+const isLoggedIn = (req, res, next) => {
+    if (req.session.user) {
+        next();
+    } else {
+        res.status(401).send('Unauthorized');
+    }
 };
 
 // Routes
 app.get('/', (req, res) => {
-    res.send('<h1>Home</h1><a href="/login">Login</a>');
+    res.send('<h1>Welcome to the Express Redis Session App!</h1>');
 });
 
 app.get('/login', (req, res) => {
-    res.send(`
-        <form method="POST" action="/login">
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-    `);
-});
-
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    if (users[username] && users[username] === password) {
-        req.session.user = username;
-        return res.redirect('/dashboard');
-    }
-    res.send('Invalid credentials');
-});
-
-app.get('/dashboard', (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-    res.send(`<h1>Dashboard</h1><p>Welcome, ${req.session.user}</p><a href="/logout">Logout</a>`);
+    // Simulate user login
+    req.session.user = { id: 1, username: 'testuser' };
+    res.send('You are logged in!');
 });
 
 app.get('/logout', (req, res) => {
-    req.session.destroy(err => {
+    req.session.destroy((err) => {
         if (err) {
-            return res.redirect('/dashboard');
+            return res.status(500).send('Could not log out.');
         }
-        res.redirect('/');
+        res.send('You are logged out!');
     });
 });
 
+app.get('/protected', isLoggedIn, (req, res) => {
+    res.send(`Hello ${req.session.user.username}, this is a protected route!`);
+});
+
 // Start the server
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+app.listen(PORT, () => {
+    console.log(`Server is running on 8000`);
 });
